@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Assignment-Memo Matcher</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-input:hover {
+            border-color: #667eea;
+        }
+        
+        .upload-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .status-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            min-height: 100px;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .results-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            display: none;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
+            text-decoration: none;
+            color: white;
+        }
+        
+        .log-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 15px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+        }
+        
+        .log-timestamp {
+            color: #90cdf4;
+            margin-right: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .summary-box {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .summary-title {
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Excel Assignment-Memo Matcher</h1>
+        
+        <div class="upload-section">
+            <h3 style="margin-bottom: 15px; color: #555;">Upload Excel File</h3>
+            <p style="margin-bottom: 20px; color: #666;">Select an Excel file (.xlsx) containing Assignment and Memo Line columns</p>
+            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls" />
+            <button id="uploadBtn" class="upload-btn">Process File</button>
+        </div>
+        
+        <div class="status-section" id="statusSection">
+            <div class="status info">Ready to process your Excel file...</div>
+        </div>
+        
+        <div class="progress-bar" id="progressBar" style="display: none;">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <h3 style="margin-bottom: 15px; color: #333;">Processing Complete!</h3>
+            <div id="resultsContent"></div>
+            <a href="#" id="downloadBtn" class="download-btn" download="filtered_output.xlsx">📥 Download Results</a>
+        </div>
+        
+        <div class="log-section">
+            <h4 style="margin-bottom: 15px; color: #90cdf4;">Application Log</h4>
+            <div id="logContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        class ExcelProcessor {
+            constructor() {
+                this.logs = [];
+                this.initializeEventListeners();
+                this.log('Application initialized', 'info');
+            }
+            
+            initializeEventListeners() {
+                const fileInput = document.getElementById('fileInput');
+                const uploadBtn = document.getElementById('uploadBtn');
+                
+                uploadBtn.addEventListener('click', () => this.processFile());
+                fileInput.addEventListener('change', (e) => {
+                    uploadBtn.disabled = !e.target.files.length;
+                });
+            }
+            
+            log(message, level = 'info') {
+                const timestamp = new Date().toLocaleString();
+                const logEntry = { timestamp, message, level };
+                this.logs.push(logEntry);
+                
+                const logContainer = document.getElementById('logContainer');
+                const logDiv = document.createElement('div');
+                logDiv.className = 'log-entry';
+                logDiv.innerHTML = `<span class="log-timestamp">[${timestamp}]</span>${message}`;
+                logContainer.appendChild(logDiv);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                
+                // Update status section
+                this.updateStatus(message, level);
+            }
+            
+            updateStatus(message, level) {
+                const statusSection = document.getElementById('statusSection');
+                statusSection.innerHTML = `<div class="status ${level}">${message}</div>`;
+            }
+            
+            updateProgress(percentage) {
+                const progressBar = document.getElementById('progressBar');
+                const progressFill = document.getElementById('progressFill');
+                
+                progressBar.style.display = 'block';
+                progressFill.style.width = percentage + '%';
+                
+                if (percentage >= 100) {
+                    setTimeout(() => {
+                        progressBar.style.display = 'none';
+                    }, 1000);
+                }
+            }
+            
+            async processFile() {
+                const fileInput = document.getElementById('fileInput');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    this.log('No file selected', 'error');
+                    return;
+                }
+                
+                this.log(`File upload started: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'info');
+                
+                try {
+                    // Validate file type
+                    if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')) {
+                        throw new Error('Invalid file format. Please upload an Excel file (.xlsx or .xls)');
+                    }
+                    
+                    this.updateProgress(10);
+                    
+                    // Read file
+                    const arrayBuffer = await this.readFileAsArrayBuffer(file);
+                    this.log('File read successfully', 'success');
+                    this.updateProgress(25);
+                    
+                    // Parse Excel
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                    const worksheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[worksheetName];
+                    
+                    this.log(`Parsed Excel file with sheet: ${worksheetName}`, 'info');
+                    this.updateProgress(40);
+                    
+                    // Convert to JSON
+                    const data = XLSX.utils.sheet_to_json(worksheet, { 
+                        raw: false, 
+                        defval: '',
+                        blankrows: false 
+                    });
+                    
+                    if (data.length === 0) {
+                        throw new Error('No data found in the Excel file');
+                    }
+                    
+                    this.log(`Loaded ${data.length} rows of data`, 'info');
+                    this.updateProgress(55);
+                    
+                    // Validate columns
+                    const requiredColumns = ['Assignment', 'Memo Line'];
+                    const columns = Object.keys(data[0] || {});
+                    const missingColumns = requiredColumns.filter(col => !columns.includes(col));
+                    
+                    if (missingColumns.length > 0) {
+                        throw new Error(`Missing required columns: ${missingColumns.join(', ')}. Available columns: ${columns.join(', ')}`);
+                    }
+                    
+                    this.log('Column validation passed', 'success');
+                    this.updateProgress(70);
+                    
+                    // Process matching
+                    const results = this.findMatches(data);
+                    this.log(`Processing complete. Found ${results.matches.length} matches`, 'success');
+                    this.updateProgress(85);
+                    
+                    // Generate output file
+                    await this.generateOutputFile(results);
+                    this.updateProgress(100);
+                    
+                    // Show results
+                    this.displayResults(results);
+                    
+                } catch (error) {
+                    this.log(`Error: ${error.message}`, 'error');
+                    console.error('Processing error:', error);
+                }
+            }
+            
+            readFileAsArrayBuffer(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(new Error('Failed to read file'));
+                    reader.readAsArrayBuffer(file);
+                });
+            }
+            
+            findMatches(data) {
+                this.log('Starting assignment-memo matching process', 'info');
+                
+                const matches = [];
+                const processedPairs = new Set();
+                
+                // Normalize function to handle mixed data types
+                const normalize = (value) => {
+                    if (value === null || value === undefined) return '';
+                    return String(value).trim().toLowerCase();
+                };
+                
+                data.forEach((assignmentRow, assignmentIndex) => {
+                    const assignment = normalize(assignmentRow.Assignment);
+                    
+                    if (!assignment) return; // Skip empty assignments
+                    
+                    data.forEach((memoRow, memoIndex) => {
+                        if (assignmentIndex === memoIndex) return; // Skip same row
+                        
+                        const memoLine = normalize(memoRow['Memo Line']);
+                        
+                        if (!memoLine) return; // Skip empty memo lines
+                        
+                        // Check if assignment appears in memo line
+                        if (memoLine.includes(assignment)) {
+                            const pairKey = `${assignmentIndex}-${memoIndex}`;
+                            const reversePairKey = `${memoIndex}-${assignmentIndex}`;
+                            
+                            // Avoid duplicate pairs
+                            if (!processedPairs.has(pairKey) && !processedPairs.has(reversePairKey)) {
+                                matches.push({
+                                    assignmentRow: { ...assignmentRow, _originalIndex: assignmentIndex },
+                                    memoRow: { ...memoRow, _originalIndex: memoIndex },
+                                    matchedText: assignment,
+                                    assignmentIndex,
+                                    memoIndex
+                                });
+                                
+                                processedPairs.add(pairKey);
+                                
+                                this.log(`Match found: "${assignment}" in row ${memoIndex + 1}`, 'success');
+                            }
+                        }
+                    });
+                });
+                
+                return {
+                    matches,
+                    totalRows: data.length,
+                    uniqueAssignments: [...new Set(data.map(row => normalize(row.Assignment)).filter(Boolean))].length,
+                    uniqueMemoLines: [...new Set(data.map(row => normalize(row['Memo Line'])).filter(Boolean))].length
+                };
+            }
+            
+            async generateOutputFile(results) {
+                this.log('Generating output Excel file', 'info');
+                
+                // Prepare data for output
+                const outputData = [];
+                
+                results.matches.forEach((match, index) => {
+                    // Add assignment row first
+                    const assignmentRow = { ...match.assignmentRow };
+                    delete assignmentRow._originalIndex;
+                    assignmentRow._MatchGroup = index + 1;
+                    assignmentRow._RowType = 'Assignment';
+                    outputData.push(assignmentRow);
+                    
+                    // Add memo row second
+                    const memoRow = { ...match.memoRow };
+                    delete memoRow._originalIndex;
+                    memoRow._MatchGroup = index + 1;
+                    memoRow._RowType = 'Memo';
+                    outputData.push(memoRow);
+                });
+                
+                // Create new workbook
+                const newWorkbook = XLSX.utils.book_new();
+                const newWorksheet = XLSX.utils.json_to_sheet(outputData);
+                
+                // Add worksheet to workbook
+                XLSX.utils.book_append_sheet(newWorkbook, newWorksheet, 'Matched Results');
+                
+                // Generate file
+                const excelBuffer = XLSX.write(newWorkbook, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.href = url;
+                
+                this.log(`Output file generated with ${outputData.length} rows (${results.matches.length} match pairs)`, 'success');
+            }
+            
+            displayResults(results) {
+                const resultsSection = document.getElementById('resultsSection');
+                const resultsContent = document.getElementById('resultsContent');
+                
+                const summary = this.generateSummary(results);
+                
+                resultsContent.innerHTML = `
+                    <div class="summary-box">
+                        <div class="summary-title">📈 Processing Summary</div>
+                        <p><strong>Total Matches Found:</strong> ${results.matches.length}</p>
+                        <p><strong>Total Rows Processed:</strong> ${results.totalRows}</p>
+                        <p><strong>Unique Assignments:</strong> ${results.uniqueAssignments}</p>
+                        <p><strong>Unique Memo Lines:</strong> ${results.uniqueMemoLines}</p>
+                        <p><strong>Match Rate:</strong> ${((results.matches.length / results.totalRows) * 100).toFixed(1)}%</p>
+                    </div>
+                    
+                    <div class="summary-box">
+                        <div class="summary-title">🤖 AI Insights</div>
+                        <p>${summary}</p>
+                    </div>
+                `;
+                
+                resultsSection.style.display = 'block';
+            }
+            
+            generateSummary(results) {
+                // Simple AI-like insights generation
+                const { matches, totalRows, uniqueAssignments } = results;
+                
+                let insights = [];
+                
+                if (matches.length === 0) {
+                    insights.push("No matches were found between assignments and memo lines.");
+                } else if (matches.length < totalRows * 0.1) {
+                    insights.push("Low match rate detected. Consider reviewing data quality or matching criteria.");
+                } else if (matches.length > totalRows * 0.5) {
+                    insights.push("High match rate indicates strong correlation between assignments and memo lines.");
+                } else {
+                    insights.push("Moderate match rate suggests selective correlation between assignments and memo lines.");
+                }
+                
+                if (uniqueAssignments < totalRows * 0.5) {
+                    insights.push("Many duplicate assignments detected - consolidation may be beneficial.");
+                }
+                
+                // Analyze match patterns
+                const matchTypes = matches.map(m => m.matchedText);
+                const frequentMatches = matchTypes.reduce((acc, match) => {
+                    acc[match] = (acc[match] || 0) + 1;
+                    return acc;
+                }, {});
+                
+                const topMatch = Object.keys(frequentMatches).reduce((a, b) => 
+                    frequentMatches[a] > frequentMatches[b] ? a : b, '');
+                
+                if (frequentMatches[topMatch] > 1) {
+                    insights.push(`Most frequent match: "${topMatch}" (${frequentMatches[topMatch]} occurrences).`);
+                }
+                
+                return insights.join(' ');
+            }
+        }
+        
+        // Initialize the application
+        const processor = new ExcelProcessor();
+    </script>
+</body>
+</html>
